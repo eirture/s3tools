@@ -56,6 +56,70 @@ func PubObject(ctx context.Context, cli *s3.S3, bucket, key string, src io.ReadS
 	return nil
 }
 
+func MultipartUpload(ctx context.Context, cli *s3.S3, bucket, key string, size, partSize int64, header map[string]string, c int) (err error) {
+	mui := &s3.CreateMultipartUploadInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+	}
+	muo, err := cli.CreateMultipartUpload(mui)
+	if err != nil {
+		return
+	}
+	uid := muo.UploadId
+
+	// upload parts
+	pn := size / partSize
+	if size%partSize > 0 {
+		pn += 1
+	}
+
+	if int64(c) > pn {
+		c = int(pn)
+	}
+
+	parts := make([]*s3.CompletedPart, c)
+	for i := int64(0); i < pn; i++ {
+		pSize := partSize
+		remain := (i + 1) * partSize
+		if remain < pSize {
+			pSize = remain
+		}
+
+		upi := &s3.UploadPartInput{
+			Bucket:     aws.String(bucket),
+			Key:        aws.String(key),
+			PartNumber: aws.Int64(i),
+			UploadId:   uid,
+			Body:       NewFakeReadSeekCloser(pSize),
+		}
+		upo, upErr := cli.UploadPartWithContext(ctx, upi, request.WithSetRequestHeaders(header))
+		if upErr != nil {
+			return upErr
+		}
+
+		parts = append(parts, &s3.CompletedPart{
+			ETag:       upo.ETag,
+			PartNumber: upi.PartNumber,
+		})
+	}
+
+	// complete upload parts
+	cmuo, err := cli.CompleteMultipartUploadWithContext(ctx, &s3.CompleteMultipartUploadInput{
+		Bucket:   aws.String(bucket),
+		Key:      aws.String(key),
+		UploadId: uid,
+		MultipartUpload: &s3.CompletedMultipartUpload{
+			Parts: parts,
+		},
+	}, request.WithSetRequestHeaders(header))
+	if err != nil {
+		return
+	}
+	log.Println(cmuo.String())
+
+	return nil
+}
+
 type FakeReadSeekCloser struct {
 	Size  int64
 	count int64

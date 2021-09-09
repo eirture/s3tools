@@ -23,6 +23,7 @@ type Config struct {
 	FileSizeList    []string `yaml:"file_size_list"`
 	Workers         int      `yaml:"workers"`
 	DeleteAfterDays []string `yaml:"delete_after_days"`
+	PartSize        int64    `yaml:"part_size"`
 
 	FileSizes []int64 `yaml:"-"`
 }
