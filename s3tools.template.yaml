@@ -1,0 +1,10 @@
+credential:
+  access_key_id: 'your access key id'
+  access_key_secret: 'your acdess key secret'
+  endpoint: 'http://127.0.0.1:20000'
+  region: z0
+
+bucket: liujie
+file_size_list: [ '10K', '512K', '10M', '20M' ]
+delete_after_days: [ '1', '2', '4', '7', '10' ]
+workers: 2

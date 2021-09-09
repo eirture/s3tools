@@ -1,3 +1,7 @@
 
-.idea
+.idea/
+bin/
+
+s3tools.yaml
+
 
