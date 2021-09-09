@@ -12,7 +12,7 @@ make build
 Print the help:
 
 ```shell
-s3tools -h
+$ s3tools -h
 
 Usage of s3tools:
   -f string
@@ -24,5 +24,5 @@ Usage of s3tools:
 upload files:
 
 ```shell
-s3tools -f s3tools.yaml -n 20
+$ s3tools -f s3tools.yaml -n 20
 ```
