@@ -1,6 +1,6 @@
 # s3tools
 
-s3tools 用于测试 s3 数据上传测试。
+s3tools 用于 s3 数据上传测试。
 
 ## build
 
