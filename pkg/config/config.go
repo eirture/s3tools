@@ -25,6 +25,10 @@ type Config struct {
 	DeleteAfterDays []string `yaml:"delete_after_days"`
 	PartSize        int64    `yaml:"part_size"`
 
+	// multipart upload
+	MultipartThreshold int64 `yaml:"multipart_threshold"`
+	MultipartSize      int64 `yaml:"multipart_size"`
+
 	FileSizes []int64 `yaml:"-"`
 }
 
@@ -34,7 +38,7 @@ func (c *Config) verify() (err error) {
 		errs = append(errs, "no file_size_list")
 	}
 	if len(c.DeleteAfterDays) == 0 {
-		errs = append(errs, "no delete after days")
+		c.DeleteAfterDays = []string{"0"}
 	}
 
 	if c.Workers <= 0 {
@@ -70,26 +74,40 @@ func Load(path string) (cfg *Config, err error) {
 	sizeList := make([]int64, len(cfg.FileSizeList))
 	var unknownSizes []string
 	for i, fs := range cfg.FileSizeList {
-		n := len(fs)
-		fstr := fs[:n-1]
-		basic := int64(64)
-		switch fs[n-1] {
-		case 'G':
-			basic = GB
-		case 'M':
-			basic = MB
-		case 'K':
-			basic = KB
-		default:
-			fstr = fs
-		}
-		basicSize, err := strconv.ParseInt(fstr, 10, 64)
+		sizeList[i], err = fromHumanSize(fs)
 		if err != nil {
 			unknownSizes = append(unknownSizes, fs)
 		}
-		sizeList[i] = basicSize * basic
 	}
+	if len(unknownSizes) > 0 {
+		err = fmt.Errorf("unknown size: %v", unknownSizes)
+		return
+	}
+
 	cfg.FileSizes = sizeList
 
+	return
+}
+
+func fromHumanSize(hs string) (size int64, err error) {
+	n := len(hs)
+	fstr := hs[:n-1]
+	basic := int64(0)
+	switch hs[n-1] {
+	case 'G':
+		basic = GB
+	case 'M':
+		basic = MB
+	case 'K':
+		basic = KB
+	default:
+		fstr = hs
+	}
+	basicSize, err := strconv.ParseInt(fstr, 10, 64)
+	if err != nil {
+		return
+	}
+
+	size = basicSize * basic
 	return
 }
