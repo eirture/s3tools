@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"math/rand"
+	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -16,6 +17,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/eirture/s3tools/pkg/build"
 	"github.com/eirture/s3tools/pkg/config"
 )
 
@@ -230,19 +232,32 @@ func upload(cfg *config.Config, cli *s3.S3, total int) (err error) {
 
 func main() {
 	var (
-		configPath = "s3tools.yaml"
-		total      = 1
+		configPath  = "s3tools.yaml"
+		total       = 1
+		bucket      = ""
+		versionFlag bool
 	)
 
 	flag.StringVar(&configPath, "f", configPath, "the config path")
 	flag.IntVar(&total, "n", total, "total files count")
+	flag.StringVar(&bucket, "bucket", bucket, "If non-empty, upload files to the bucket.")
+	flag.BoolVar(&versionFlag, "version", versionFlag, "Show version")
 	flag.Parse()
+
+	if versionFlag {
+		build.PrintVersion()
+		os.Exit(0)
+	}
 
 	rand.Seed(time.Now().UnixNano())
 
 	cfg, err := config.Load(configPath)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	if bucket != "" {
+		cfg.Bucket = bucket
 	}
 
 	if cfg.Credential == nil {
