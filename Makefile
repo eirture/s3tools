@@ -11,5 +11,6 @@ build:
 	@mkdir -p bin
 	go build -ldflags "${GO_LDFLAGS}" -o ./bin/ ./pkg/cmd/s3tools
 
+.PHONY: clean
 clean:
 	rm -rf bin/*
